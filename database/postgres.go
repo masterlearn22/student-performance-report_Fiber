@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
-var DB *sql.DB
+var PostgresDB *sql.DB
 
 // ConnectDB menginisialisasi koneksi ke database
 func ConnectPostgres() {
@@ -22,7 +22,7 @@ func ConnectPostgres() {
 	)
 
 	var err error
-	DB, err = sql.Open("postgres", dsn)
+	PostgresDB, err = sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatal("Failed to connect to PostgreSQL:", err)
 	}

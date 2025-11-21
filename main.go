@@ -1,12 +1,14 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 	// "os"
 	// "context"
 	"student-performance-report/config"
 	"student-performance-report/database"
 	FiberApp "student-performance-report/fiber"
+	routePostgre "student-performance-report/route/postgresql"
+	routeMongo "student-performance-report/route/mongodb"
 
 	
 )
@@ -26,14 +28,17 @@ func main() {
 
 	// Connect to PostgreSQL
 	database.ConnectPostgres()
-	defer database.DB.Close()
+	defer database.PostgresDB.Close()
 
 	// Connect to MongoDB
 	database.ConnectMongo()
 
 	//3 Setup Fiber App
-	FiberApp.SetupFiber()
-	
+	app := FiberApp.SetupFiber()
 
 	//4. Setup Route
+	routePostgre.SetupPostgresRoutes(app, database.PostgresDB)
+	routeMongo.SetupMongoRoutes(app, database.MongoDB)
+
+	fmt.Println("Setup route berhasil")
 }
