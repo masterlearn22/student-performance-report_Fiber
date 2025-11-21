@@ -6,6 +6,7 @@ import (
 	// "context"
 	"student-performance-report/config"
 	"student-performance-report/database"
+	FiberApp "student-performance-report/fiber"
 
 	
 )
@@ -30,5 +31,9 @@ func main() {
 	// Connect to MongoDB
 	database.ConnectMongo()
 
+	//3 Setup Fiber App
+	FiberApp.SetupFiber()
 	
+
+	//4. Setup Route
 }
