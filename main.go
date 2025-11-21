@@ -1,20 +1,34 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	// "fmt"
+	// "os"
+	// "context"
 	"student-performance-report/config"
+	"student-performance-report/database"
+
 	
 )
 
 func main() {
+
+	// 1. Load .env file
     config.LoadEnv() // Load file .env
+    // host := os.Getenv("DB_HOST")
+    // if host == "" {
+    //     fmt.Println(".env gagal diload atau DB_HOST tidak ditemukan")
+    // } else {
+    //     fmt.Println(".env berhasil diload. DB_HOST =", host)
+    // }
 
-    host := os.Getenv("DB_HOST")
+	//2. Connect to Database
 
-    if host == "" {
-        fmt.Println(".env gagal diload atau DB_HOST tidak ditemukan")
-    } else {
-        fmt.Println(".env berhasil diload. DB_HOST =", host)
-    }
+	// Connect to PostgreSQL
+	database.ConnectPostgres()
+	defer database.DB.Close()
+
+	// Connect to MongoDB
+	database.ConnectMongo()
+
+	
 }
