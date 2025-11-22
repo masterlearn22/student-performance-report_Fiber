@@ -121,14 +121,9 @@ func (s *authService) Logout(c *fiber.Ctx) error {
 }
 
 func (s *authService) Profile(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
+	userID := c.Locals("user_id").(uuid.UUID)
 
-	id, err := uuid.Parse(userID)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "invalid user id"})
-	}
-
-	user, err := s.userRepo.GetByID(id)
+	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "user not found"})
 	}
@@ -144,5 +139,3 @@ func (s *authService) Profile(c *fiber.Ctx) error {
 		Permissions: permissions,
 	})
 }
-
-

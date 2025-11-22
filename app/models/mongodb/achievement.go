@@ -52,13 +52,8 @@ type Achievement struct {
 	AchievementType string             `bson:"achievementType" json:"achievementType"` // academic, competition, etc
 	Title           string             `bson:"title" json:"title"`
 	Description     string             `bson:"description" json:"description"`
-	
-	// Struct Detail yang embed field dinamis
 	Details         AchievementDetails `bson:"details" json:"details"`
-	
-	// Custom fields untuk fleksibilitas tambahan [cite: 145]
 	CustomFields    map[string]interface{} `bson:"customFields,omitempty" json:"customFields,omitempty"`
-	
 	Attachments     []Attachment       `bson:"attachments" json:"attachments"`
 	Tags            []string           `bson:"tags" json:"tags"`
 	Points          int                `bson:"points" json:"points"`

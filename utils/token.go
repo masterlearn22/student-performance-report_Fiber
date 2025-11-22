@@ -1,22 +1,25 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"time"
-	"errors"
+
 	// "fmt"
+	"student-performance-report/config"
 
 	"student-performance-report/app/models/postgresql"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
 // GenerateToken membuat string token JWT lengkap dengan claims
 func GenerateToken(user *models.User, roleName string, permissions []string) (string, error) {
 	// Ambil secret dari .env
-	secret := os.Getenv("JWT_SECRET")
 	
 	// Set waktu expired (misal 24 jam)
-	expirationTime := time.Now().Add(24 * time.Hour)
+	jwtCfg := config.LoadJWT()
 
 	claims := &models.JWTClaims{
 		UserID:      user.ID,
@@ -24,39 +27,31 @@ func GenerateToken(user *models.User, roleName string, permissions []string) (st
 		RoleName:    roleName,
 		Permissions: permissions,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(jwtCfg.TTLHours) * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "student-performance-app",
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
+	return token.SignedString(jwtCfg.Secret)
 }
 
 func ValidateToken(tokenString string) (*models.JWTClaims, error) {
-	secret := os.Getenv("JWT_SECRET")
-
-	token, err := jwt.ParseWithClaims(
-		tokenString,
-		&models.JWTClaims{}, // pastikan pakai struct yang mengandung RoleName
-		func(token *jwt.Token) (interface{}, error) {
-			return []byte(secret), nil
-		},
-	)
+	fmt.Println("Validating token:", tokenString)
+	jwtCfg := config.LoadJWT()
+	token, err := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return jwtCfg.Secret, nil
+	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*models.JWTClaims)
-	if !ok || !token.Valid {
-		return nil, errors.New("invalid token")
+	if claims, ok := token.Claims.(*models.JWTClaims); ok && token.Valid {
+    return claims, nil
 	}
-
-	// DEBUG
-	// fmt.Println("RoleName:", claims.RoleName)
-
-	return claims, nil
+	return nil, jwt.ErrTokenInvalidClaims
 }
 
 
@@ -107,4 +102,3 @@ func ValidateRefreshToken(t string) (*models.RefreshClaims, error) {
 
 	return claims, nil
 }
-
