@@ -74,8 +74,23 @@ func (r *adminRepository) UpdateUser(user *models.User) error {
 }
 
 func (r *adminRepository) DeleteUser(id uuid.UUID) error {
-	_, err := r.db.Exec(`DELETE FROM users WHERE id=$1`, id)
-	return err
+	query := `
+        UPDATE users
+        SET is_active = FALSE,
+            updated_at = NOW()
+        WHERE id = $1 AND is_active = TRUE
+    `
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return errors.New("user already inactive or not found")
+	}
+
+	return nil
 }
 
 func (r *adminRepository) GetUserByID(id uuid.UUID) (*models.User, error) {

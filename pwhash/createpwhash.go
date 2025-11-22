@@ -6,13 +6,13 @@ import (
 )
 
 func main() {
-	password := "123456" // ganti jika ingin password lain
+	password := "1234567890" // ganti jika ingin password lain
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
 		panic(err)
 	}
-
+	
 	fmt.Println("Password:", password)
 	fmt.Println("Hash:", string(hash))
 }

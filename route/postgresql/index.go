@@ -1,22 +1,28 @@
 package route
 
 import (
-    "database/sql"
+	"database/sql"
 
-    repo "student-performance-report/app/repository/postgresql"
-    service "student-performance-report/app/service/postgresql"
-    "student-performance-report/middleware"
+	repoMongo "student-performance-report/app/repository/mongodb"
+	repoPostgre "student-performance-report/app/repository/postgresql"
+	service "student-performance-report/app/service/postgresql"
+	"student-performance-report/database"
+	"student-performance-report/middleware"
 
-    "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 )
 
 func SetupPostgresRoutes(app *fiber.App, db *sql.DB) {
 
-    userRepo := repo.NewUserRepository(db)
+    userRepo := repoPostgre.NewUserRepository(db)
     authService := service.NewAuthService(userRepo)
-
-    adminRepo := repo.NewAdminRepository(db)
+    adminRepo := repoPostgre.NewAdminRepository(db)
     adminService := service.NewAdminService(adminRepo, userRepo)
+    studentRepo := repoPostgre.NewStudentRepository(db)
+    achievementRepo := repoMongo.NewAchievementRepository(database.MongoDB)
+    studentService := service.NewStudentService(studentRepo, achievementRepo)
+    lecturerRepo := repoPostgre.NewLecturerRepository(db)
+    lecturerService := service.NewLecturerService(lecturerRepo)
 
     // AUTH
     auth := app.Group("/api/v1/auth")
@@ -33,4 +39,13 @@ func SetupPostgresRoutes(app *fiber.App, db *sql.DB) {
     users.Put("/:id", adminService.UpdateUser)
     users.Delete("/:id", adminService.DeleteUser)
     users.Put("/:id/role", middleware.RoleAllowed("admin"), adminService.AssignRole)
+
+
+     // Students and Lecturers
+    auth.Get("/students", studentService.GetAllStudents)
+    auth.Get("/students/:id", studentService.GetStudentByID)
+    auth.Get("/students/:id/achievements", studentService.GetStudentAchievements)
+    auth.Put("/students/:id/advisor", studentService.UpdateAdvisor)
+    auth.Get("/lecturers", lecturerService.GetAllLecturers)
+    auth.Get("/lecturers/:id/advisees", lecturerService.GetAdvisees)
 }

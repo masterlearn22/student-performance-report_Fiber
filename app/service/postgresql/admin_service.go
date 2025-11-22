@@ -133,25 +133,29 @@ func (s *AdminService) UpdateUser(c *fiber.Ctx) error {
 //////////////////////////////////////////////////
 
 func (s *AdminService) DeleteUser(c *fiber.Ctx) error {
-    paramID := c.Params("id")
-    userID := c.Locals("user_id").(uuid.UUID)
-    role := c.Locals("role_name").(string)
 
-    targetID, err := uuid.Parse(paramID)
-    if err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": "invalid user id"})
-    }
+	paramID := c.Params("id")
+	targetID, err := uuid.Parse(paramID)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid user id"})
+	}
 
-    if role != "admin" && targetID != userID {
-        return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
-    }
+	// claims.UserID adalah uuid.UUID
+	userID := c.Locals("user_id").(uuid.UUID)
+	role := c.Locals("role_name").(string)
 
-    if err := s.adminRepo.DeleteUser(targetID); err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-    }
+	// User non-admin hanya boleh delete miliknya sendiri
+	if role != "admin" && userID != targetID {
+		return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
+	}
 
-    return c.JSON(fiber.Map{"message": "user deleted"})
+	if err := s.adminRepo.DeleteUser(targetID); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "user deactivated (soft deleted)"})
 }
+
 
 //////////////////////////////////////////////////
 // ASSIGN ROLE (ADMIN ONLY)
