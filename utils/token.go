@@ -2,7 +2,7 @@ package utils
 
 import (
 	"errors"
-	"fmt"
+	// "fmt"
 	"os"
 	"time"
 
@@ -38,7 +38,7 @@ func GenerateToken(user *models.User, roleName string, permissions []string) (st
 }
 
 func ValidateToken(tokenString string) (*models.JWTClaims, error) {
-	fmt.Println("Validating token:", tokenString)
+	// fmt.Println("Validating token:", tokenString)
 	jwtCfg := config.LoadJWT()
 	token, err := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return jwtCfg.Secret, nil

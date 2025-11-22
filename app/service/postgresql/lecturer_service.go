@@ -44,3 +44,4 @@ func (s *LecturerService) GetAdvisees(c *fiber.Ctx) error {
 
 	return c.JSON(students)
 }
+

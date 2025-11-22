@@ -62,7 +62,6 @@ func (r *userRepository) GetByUsername(username string) (*models.User, string, e
 
 
 // GetPermissionsByRoleID mengambil list permission string berdasarkan Role ID
-// Ini implementasi tabel permissions dan role_permissions [cite: 51, 68]
 func (r *userRepository) GetPermissionsByRoleID(roleID uuid.UUID) ([]string, error) {
 	query := `
 		SELECT p.name 

@@ -2,7 +2,8 @@ package repository
 
 import (
 	"database/sql"
-
+	"context"
+	"errors"
 	models "student-performance-report/app/models/postgresql"
 	"github.com/google/uuid"
 )
@@ -11,6 +12,7 @@ type LecturerRepository interface {
 	GetAllLecturers() ([]models.Lecturer, error)
 	GetLecturerByID(id uuid.UUID) (*models.Lecturer, error)
 	GetAdvisees(lecturerID uuid.UUID) ([]models.Student, error)
+	GetLecturerByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 }
 
 type lecturerRepository struct {
@@ -74,6 +76,16 @@ func (r *lecturerRepository) GetAdvisees(lecturerID uuid.UUID) ([]models.Student
 		list = append(list, s)
 	}
 	return list, nil
+}
+
+func (r *lecturerRepository) GetLecturerByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+    query := `SELECT id FROM lecturers WHERE user_id = $1`
+    var lecturerID uuid.UUID
+    err := r.db.QueryRowContext(ctx, query, userID).Scan(&lecturerID)
+    if err != nil {
+        return uuid.Nil, errors.New("lecturer profile not found")
+    }
+    return lecturerID, nil
 }
 
 
