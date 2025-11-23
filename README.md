@@ -80,29 +80,30 @@ The Student Performance Reporting System is a comprehensive backend solution des
 ### Project Structure
 
 ```
-student-performance-report/
-├── app/
-│   ├── config/              # Application configuration
-│   ├── database/            # Database connection handlers
-│   ├── docs/                # API documentation
-│   ├── fiber/               # Fiber app setup
-│   ├── middleware/          # Authentication & RBAC middleware
-│   ├── models/              
-│   │   ├── mongodb/         # MongoDB document structures
-│   │   └── postgresql/      # PostgreSQL table models
-│   ├── repository/          # Data access layer
-│   │   ├── mongodb/         # MongoDB operations
-│   │   └── postgresql/      # PostgreSQL operations
-│   ├── route/               # API route definitions
-│   ├── service/             # Business logic layer
-│   │   ├── mongodb/         # MongoDB business logic
-│   │   └── postgresql/      # PostgreSQL business logic
-│   ├── uploads/             # Static file storage
-│   └── utils/               # Helper utilities
-├── .env                     # Environment configuration
-├── go.mod                   # Go module dependencies
-├── go.sum                   # Dependency checksums
-└── main.go                  # Application entry point
+student-performance-report
+├── app       
+│   ├── models           # Data Structures / Entities
+│   │   ├── mongodb      # Structs for MongoDB collections (Achievement details)
+│   │   └── postgresql   # Structs for SQL tables (Users, Roles, References)
+│   ├── repository       # Data Access Layer (Database Queries)
+│   │   ├── mongodb      # Implementation of MongoDB operations
+│   │   └── postgresql   # Implementation of PostgreSQL operations
+│   └── service          # Business Logic Layer
+│       ├── mongodb      # Services handling MongoDB logic (Achievement, Reports)
+│       └── postgresql   # Services handling SQL logic (Auth, Admin, Student)     
+├── config               # Configuration setup (Env, JWT)
+├── database             # Connection logic for MongoDB & PostgreSQL
+├── docs                 # API Documentation files
+├── fiber                # Fiber app configuration
+├── middleware           # Auth & Role-Based Access Control (RBAC)
+├── pwhash               # Password hashing utilities
+├── route                # API Endpoint definitions
+├── uploads              # Directory for static file storage (attachments)
+├── utils                # Helper functions (Token generators, Validators)
+├── .env                 # Environment variables configuration
+├── go.mod               # Go module definition
+├── go.sum               # Go module checksums
+└── main.go              # Application entry point
 ```
 
 ---
