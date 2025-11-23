@@ -52,7 +52,11 @@ func (r *achievementRepoPostgres) Create(ctx context.Context, ref models.Achieve
 }
 
 func (r *achievementRepoPostgres) GetAllReferences(ctx context.Context, filter map[string]interface{}) ([]models.AchievementReference, error) {
-    query := `SELECT id, student_id, mongo_achievement_id, status, created_at FROM achievement_references WHERE 1=1`
+    query := `
+    SELECT id, student_id, mongo_achievement_id, status,submitted_at, created_at 
+    FROM achievement_references 
+    WHERE status != 'deleted'
+    `
     var args []interface{}
     argCount := 1
 
@@ -75,7 +79,7 @@ func (r *achievementRepoPostgres) GetAllReferences(ctx context.Context, filter m
     for rows.Next() {
         var ref models.AchievementReference
         // Pastikan urutan Scan sesuai SELECT
-        if err := rows.Scan(&ref.ID, &ref.StudentID, &ref.MongoAchievementID, &ref.Status, &ref.CreatedAt); err != nil {
+        if err := rows.Scan(&ref.ID, &ref.StudentID, &ref.MongoAchievementID, &ref.Status, &ref.SubmittedAt, &ref.CreatedAt); err != nil {
             return nil, err
         }
         results = append(results, ref)
@@ -90,7 +94,7 @@ func (r *achievementRepoPostgres) GetReferenceByID(ctx context.Context, id uuid.
             id, student_id, mongo_achievement_id, status, rejection_note, 
             created_at, submitted_at, verified_at, verified_by 
         FROM achievement_references 
-        WHERE id = $1
+        WHERE status != 'deleted' AND id = $1
     `
     
     var ref models.AchievementReference
@@ -118,9 +122,13 @@ func (r *achievementRepoPostgres) GetReferenceByID(ctx context.Context, id uuid.
     return ref, err
 }
 
-// [BARU] Hapus Referensi
+// Ubah Implementasi DeleteReference (Soft Delete)
 func (r *achievementRepoPostgres) DeleteReference(ctx context.Context, id uuid.UUID) error {
-    query := `DELETE FROM achievement_references WHERE id = $1`
+    query := `
+        UPDATE achievement_references 
+        SET status = 'deleted', updated_at = NOW() 
+        WHERE id = $1
+    `
     _, err := r.db.ExecContext(ctx, query, id)
     return err
 }
