@@ -1,68 +1,80 @@
 package service
 
 import (
-	repo "student-performance-report/app/repository/postgresql"
-	mongoRepo "student-performance-report/app/repository/mongodb"
-	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
+    repo "student-performance-report/app/repository/postgresql"
+    mongoRepo "student-performance-report/app/repository/mongodb"
+    "github.com/gofiber/fiber/v2"
+    "github.com/google/uuid"
 )
 
 type StudentService struct {
-	studentRepo repo.StudentRepository
-	achievementRepo mongoRepo.AchievementRepository
+    studentRepo     repo.StudentRepository
+    achievementRepo mongoRepo.AchievementRepository
 }
 
-
 func NewStudentService(r repo.StudentRepository, a mongoRepo.AchievementRepository) *StudentService {
-	return &StudentService{studentRepo: r, achievementRepo: a}
+    return &StudentService{studentRepo: r, achievementRepo: a}
 }
 
 func (s *StudentService) GetAllStudents(c *fiber.Ctx) error {
-	data, err := s.studentRepo.GetAllStudents()
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.JSON(data)
+    // [FIX] Tambahkan c.Context()
+    data, err := s.studentRepo.GetAllStudents(c.Context())
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+    }
+    return c.JSON(data)
 }
 
 func (s *StudentService) GetStudentByID(c *fiber.Ctx) error {
-	id, _ := uuid.Parse(c.Params("id"))
+    id, err := uuid.Parse(c.Params("id"))
+    if err != nil {
+        return c.Status(400).JSON(fiber.Map{"error": "Invalid UUID format"})
+    }
 
-	student, err := s.studentRepo.GetStudentByID(id)
-	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "student not found"})
-	}
+    // [FIX] Tambahkan c.Context()
+    student, err := s.studentRepo.GetStudentByID(c.Context(), id)
+    if err != nil {
+        return c.Status(404).JSON(fiber.Map{"error": "student not found"})
+    }
 
-	return c.JSON(student)
+    return c.JSON(student)
 }
 
 func (s *StudentService) GetStudentAchievements(c *fiber.Ctx) error {
-	id, _ := uuid.Parse(c.Params("id"))
+    id, err := uuid.Parse(c.Params("id"))
+    if err != nil {
+        return c.Status(400).JSON(fiber.Map{"error": "Invalid UUID format"})
+    }
 
-	achievements, err := s.achievementRepo.GetStudentAchievements(id)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-	}
+    // Note: Achievement Repo Mongo Anda sepertinya belum diupdate pakai context di interface-nya
+    // Jadi biarkan seperti ini dulu, kecuali Anda mengubah interface achievementRepo juga.
+    achievements, err := s.achievementRepo.GetStudentAchievements(id)
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+    }
 
-	return c.JSON(achievements)
+    return c.JSON(achievements)
 }
 
 func (s *StudentService) UpdateAdvisor(c *fiber.Ctx) error {
-	var body struct {
-		LecturerID string `json:"lecturerId"`
-	}
-	if err := c.BodyParser(&body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "invalid JSON"})
-	}
+    var body struct {
+        LecturerID string `json:"lecturerId"`
+    }
+    if err := c.BodyParser(&body); err != nil {
+        return c.Status(400).JSON(fiber.Map{"error": "invalid JSON"})
+    }
 
-	studentID, _ := uuid.Parse(c.Params("id"))
-	lecturerID, _ := uuid.Parse(body.LecturerID)
+    studentID, err := uuid.Parse(c.Params("id"))
+    if err != nil { return c.Status(400).JSON(fiber.Map{"error": "Invalid Student ID"}) }
+    
+    lecturerID, err := uuid.Parse(body.LecturerID)
+    if err != nil { return c.Status(400).JSON(fiber.Map{"error": "Invalid Lecturer ID"}) }
 
-	err := s.studentRepo.UpdateAdvisor(studentID, lecturerID)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-	}
+    // [FIX] Tambahkan c.Context()
+    err = s.studentRepo.UpdateAdvisor(c.Context(), studentID, lecturerID)
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+    }
 
-	return c.JSON(fiber.Map{"message": "advisor updated"})
+    return c.JSON(fiber.Map{"message": "advisor updated"})
 }
-

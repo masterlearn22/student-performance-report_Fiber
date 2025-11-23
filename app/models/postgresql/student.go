@@ -8,11 +8,12 @@ import (
 type Student struct {
     ID            uuid.UUID  `json:"id" db:"id"`
     UserID        uuid.UUID  `json:"user_id" db:"user_id"`
-    StudentID     string     `json:"student_id" db:"student_id"` // NIM
+    StudentID     string     `json:"student_id" db:"student_id"` 
     ProgramStudy  string     `json:"program_study" db:"program_study"`
     AcademicYear  string     `json:"academic_year" db:"academic_year"`
-    AdvisorID     *uuid.UUID `json:"advisor_id" db:"advisor_id"` // nullable FK
+    AdvisorID     *uuid.UUID `json:"advisor_id" db:"advisor_id"` 
     CreatedAt     time.Time  `json:"created_at" db:"created_at"`
+    FullName       string     `json:"fullName"`
 }
 
 type StudentResp struct {
@@ -22,5 +23,11 @@ type StudentResp struct {
     ProgramStudy string     `json:"programStudy"`
     AcademicYear string     `json:"academicYear"`
     AdvisorID    *uuid.UUID `json:"advisorId,omitempty"`
+}
+
+type StudentWithUser struct {
+    ID           uuid.UUID
+    FullName     string
+    ProgramStudy string
 }
 

@@ -40,6 +40,9 @@ func SetupPostgresRoutes(app *fiber.App, db *sql.DB) {
     // Note: AchievementService inject 3 dependencies (Mongo, Postgres, Lecturer)
     achievementService := mongoService.NewAchievementService(achRepoMongo, achRepoPg, lecturerRepo)
 
+    // Report Service (Hybrid: Mongo Stats + Postgres Student Names)
+	reportService := mongoService.NewReportService(achRepoMongo, studentRepo)
+
     // Static Files Config
     app.Static("/uploads", "./uploads")
 
@@ -141,4 +144,19 @@ func SetupPostgresRoutes(app *fiber.App, db *sql.DB) {
     // Lecturers
     api.Get("/lecturers", middleware.AuthRequired(), lecturerService.GetAllLecturers)
     api.Get("/lecturers/:id/advisees", middleware.AuthRequired(), lecturerService.GetAdvisees)
+
+
+    // ---------------------------------------------------------
+	// 5.8 Reports & Analytics (NEW)
+	// ---------------------------------------------------------
+	reports := api.Group("/reports", middleware.AuthRequired())
+
+	// Global Stats (Admin Only)
+	reports.Get("/statistics",
+		middleware.RoleAllowed("admin"),
+		reportService.GetStatistics)
+
+	// Student Stats (Mahasiswa/Dosen/Admin)
+	reports.Get("/student/:id",
+		reportService.GetStudentReport)
 }
