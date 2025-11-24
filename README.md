@@ -87,10 +87,12 @@ student-performance-report
 │   │   └── postgresql   # Structs for SQL tables (Users, Roles, References)
 │   ├── repository       # Data Access Layer (Database Queries)
 │   │   ├── mongodb      # Implementation of MongoDB operations
-│   │   └── postgresql   # Implementation of PostgreSQL operations
+│   │   ├── postgresql   # Implementation of PostgreSQL operations
+│   │   └── mock         # Mock repository implementations for unit testing
 │   └── service          # Business Logic Layer
 │       ├── mongodb      # Services handling MongoDB logic (Achievement, Reports)
-│       └── postgresql   # Services handling SQL logic (Auth, Admin, Student)     
+│       ├── postgresql   # Services handling SQL logic (Auth, Admin, Student)       
+│       └── unit_testing # Unit test cases for service layer
 ├── config               # Configuration setup (Env, JWT)
 ├── database             # Connection logic for MongoDB & PostgreSQL
 ├── docs                 # API Documentation files
