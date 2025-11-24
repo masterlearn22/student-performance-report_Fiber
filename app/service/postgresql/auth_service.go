@@ -8,16 +8,16 @@ import (
 	"github.com/google/uuid"
 )
 
-type authService struct {
+type AuthService struct {
 	userRepo repo.UserRepository
 }
 
-func NewAuthService(userRepo repo.UserRepository) *authService {
-	return &authService{userRepo: userRepo}
+func NewAuthService(userRepo repo.UserRepository) *AuthService {
+	return &AuthService{userRepo: userRepo}
 }
 
 
-func (s *authService) Login(c *fiber.Ctx) error {
+func (s *AuthService) Login(c *fiber.Ctx) error {
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -68,7 +68,7 @@ func (s *authService) Login(c *fiber.Ctx) error {
 	})
 }
 
-func (s *authService) Refresh(c *fiber.Ctx) error {
+func (s *AuthService) Refresh(c *fiber.Ctx) error {
 	var req struct {
 		RefreshToken string `json:"refreshToken"`
 	}
@@ -103,13 +103,13 @@ func (s *authService) Refresh(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"token": newToken})
 }
 
-func (s *authService) Logout(c *fiber.Ctx) error {
+func (s *AuthService) Logout(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "logout successful",
 	})
 }
 
-func (s *authService) Profile(c *fiber.Ctx) error {
+func (s *AuthService) Profile(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uuid.UUID)
 
 	user, err := s.userRepo.GetByID(userID)
