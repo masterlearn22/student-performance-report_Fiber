@@ -105,44 +105,14 @@ func SetupPostgresRoutes(app *fiber.App, db *sql.DB) {
         achievementService.RejectAchievement)
 
     // 5.5 Students & Lecturers
-    manageStudentsMiddleware :=middleware.AuthRequired(); middleware.RoleAllowed("admin", "dosen_wali")
-    manageStudentsPermission := middleware.PermissionRequired("manage:students")
-    manageLecturersMiddleware := middleware.AuthRequired(); middleware.RoleAllowed("admin")
-    manageLecturersPermission := middleware.PermissionRequired("manage:lecturers")
-    api.Get("/students", 
-        middleware.AuthRequired(),
-        manageStudentsMiddleware,
-        manageStudentsPermission,
-        studentService.GetAllStudents)
-
-    api.Get("/students/:id",  
-        middleware.AuthRequired(),
-        manageStudentsMiddleware,
-        manageStudentsPermission,
-        studentService.GetStudentByID)
-
-    api.Get("/students/:id/achievements", 
-        middleware.AuthRequired(), 
-        manageStudentsMiddleware,
-        studentService.GetStudentAchievements)
-
-    api.Put("/students/:id/advisor", 
-        middleware.AuthRequired(),
-        manageStudentsMiddleware,
-        manageStudentsPermission, 
-        studentService.UpdateAdvisor)
-
-    api.Get("/lecturers",  
-        middleware.AuthRequired(),
-        manageLecturersMiddleware,
-        manageLecturersPermission,
-        lecturerService.GetAllLecturers)
-
-    api.Get("/lecturers/:id/advisees", 
-        middleware.AuthRequired(),
-        manageLecturersMiddleware,
-        manageLecturersPermission, 
-        lecturerService.GetAdvisees)
+    student := api.Group("/students", middleware.AuthRequired())
+    lecturer := api.Group("/lecturers", middleware.AuthRequired())
+    student.Get("/",  studentService.GetAllStudents)
+    student.Get("/:id",   studentService.GetStudentByID)
+    student.Get("/:id/achievements", studentService.GetStudentAchievements)
+    student.Put("/:id/advisor",   studentService.UpdateAdvisor)
+    lecturer.Get("/",   lecturerService.GetAllLecturers)
+    lecturer.Get("/:id/advisees", lecturerService.GetAdvisees)
 
 	// 5.8 Reports & Analytics (NEW)
 	reports := api.Group("/reports", middleware.AuthRequired())

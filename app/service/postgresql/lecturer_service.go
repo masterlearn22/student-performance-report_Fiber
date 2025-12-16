@@ -4,6 +4,7 @@ import (
 	repo "student-performance-report/app/repository/postgresql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"student-performance-report/middleware"
 )
 
 type LecturerService struct {
@@ -23,6 +24,9 @@ func NewLecturerService(r repo.LecturerRepository) *LecturerService {
 // @Success 200 {array} models.Lecturer
 // @Router /lecturers [get]
 func (s *LecturerService) GetAllLecturers(c *fiber.Ctx) error {
+	if !middleware.HasPermission(c, "manage:lecturers") {
+		return fiber.ErrForbidden
+	}
 	data, err := s.lecturerRepo.GetAllLecturers()
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -31,11 +35,15 @@ func (s *LecturerService) GetAllLecturers(c *fiber.Ctx) error {
 }
 
 func (s *LecturerService) GetLecturerByID(c *fiber.Ctx) error {
+	if !middleware.HasPermission(c, "manage:lecturers") {
+		return fiber.ErrForbidden
+	}
+
 	id, _ := uuid.Parse(c.Params("id"))
 
 	lecturer, err := s.lecturerRepo.GetLecturerByID(id)
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "lecturer not found"})
+		return c.Status(404).JSON(fiber.Map{"error": "lecture r not found"})
 	}
 
 	return c.JSON(lecturer)
@@ -51,6 +59,9 @@ func (s *LecturerService) GetLecturerByID(c *fiber.Ctx) error {
 // @Success 200 {array} models.Student
 // @Router /lecturers/{id}/advisees [get]
 func (s *LecturerService) GetAdvisees(c *fiber.Ctx) error {
+	if !middleware.HasPermission(c, "manage:students") {
+		return fiber.ErrForbidden
+	}
 	id, _ := uuid.Parse(c.Params("id"))
 
 	students, err := s.lecturerRepo.GetAdvisees(id)

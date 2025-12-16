@@ -5,6 +5,7 @@ import (
     mongoRepo "student-performance-report/app/repository/mongodb"
     "github.com/gofiber/fiber/v2"
     "github.com/google/uuid"
+    "student-performance-report/middleware"
 )
 
 type StudentService struct {
@@ -25,6 +26,9 @@ func NewStudentService(r repo.StudentRepository, a mongoRepo.AchievementReposito
 // @Success 200 {array} models.Student
 // @Router /students [get]
 func (s *StudentService) GetAllStudents(c *fiber.Ctx) error {
+    if !middleware.HasPermission(c, "manage:students") {
+		return fiber.ErrForbidden
+	}
     data, err := s.studentRepo.GetAllStudents(c.Context())
     if err != nil {
         return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -43,6 +47,9 @@ func (s *StudentService) GetAllStudents(c *fiber.Ctx) error {
 // @Failure 404 {object} map[string]interface{}
 // @Router /students/{id} [get]
 func (s *StudentService) GetStudentByID(c *fiber.Ctx) error {
+    if !middleware.HasPermission(c, "manage:students") {
+		return fiber.ErrForbidden
+	}
     id, err := uuid.Parse(c.Params("id"))
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid UUID format"})
@@ -66,6 +73,9 @@ func (s *StudentService) GetStudentByID(c *fiber.Ctx) error {
 // @Success 200 {array} models.Achievement
 // @Router /students/{id}/achievements [get]
 func (s *StudentService) GetStudentAchievements(c *fiber.Ctx) error {
+    if !middleware.HasPermission(c, "manage:students") {
+		return fiber.ErrForbidden
+	}
     id, err := uuid.Parse(c.Params("id"))
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid UUID format"})
@@ -89,9 +99,13 @@ func (s *StudentService) GetStudentAchievements(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]string
 // @Router /students/{id}/advisor [put]
 func (s *StudentService) UpdateAdvisor(c *fiber.Ctx) error {
+
     var body struct {
         LecturerID string `json:"lecturerId"`
     }
+    if !middleware.HasPermission(c, "manage:lecturers") {
+		return fiber.ErrForbidden
+	}
     if err := c.BodyParser(&body); err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "invalid JSON"})
     }
