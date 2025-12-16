@@ -44,37 +44,13 @@ func SetupPostgresRoutes(app *fiber.App, db *sql.DB) {
         authService.Profile)
 
     // 5.2 Users 
-    users := api.Group("/users", 
-        middleware.AuthRequired(), 
-        middleware.RoleAllowed("admin"))
-
-    manageUsersMiddleware := middleware.RoleAllowed("admin")
-    manageUserPermission := middleware.PermissionRequired("manage:users")
-
-    users.Get("/", 
-        manageUsersMiddleware,
-        manageUserPermission,
-        adminService.GetAllUsers)
-    users.Get("/:id",
-        manageUsersMiddleware,
-        manageUserPermission,
-        adminService.GetUserByID)
-    users.Post("/",
-        manageUsersMiddleware,
-        manageUserPermission,
-        adminService.CreateUser)
-    users.Put("/:id",
-        manageUsersMiddleware,
-        manageUserPermission,
-        adminService.UpdateUser)
-    users.Delete("/:id",
-        manageUsersMiddleware,
-        manageUserPermission,
-        adminService.DeleteUser)
-    users.Put("/:id/role",
-        manageUsersMiddleware,
-        manageUserPermission,
-        adminService.AssignRole)
+    users := api.Group("/users", middleware.AuthRequired())
+    users.Get("/", adminService.GetAllUsers)
+    users.Get("/:id", adminService.GetUserByID)
+    users.Post("/", adminService.CreateUser)
+    users.Put("/:id", adminService.UpdateUser)
+    users.Delete("/:id", adminService.DeleteUser)
+    users.Put("/:id/role", adminService.AssignRole)
 
     // 5.4 Achievements
     ach := api.Group("/achievements", middleware.AuthRequired())

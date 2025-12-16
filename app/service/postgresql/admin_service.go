@@ -7,6 +7,7 @@ import (
     repo "student-performance-report/app/repository/postgresql"
     "github.com/gofiber/fiber/v2"
     "github.com/google/uuid"
+    "student-performance-report/middleware"
 )
 
 type AdminService struct {
@@ -28,10 +29,8 @@ func NewAdminService(adminRepo repo.AdminRepository, userRepo repo.UserRepositor
 // @Failure 403,500 {object} map[string]interface{}
 // @Router /users [get]
 func (s *AdminService) GetAllUsers(c *fiber.Ctx) error {
-    role := c.Locals("role_name").(string)
-
-    if role != "admin" {
-        return c.Status(403).JSON(fiber.Map{"error": "admin only"})
+    if !middleware.HasPermission(c, "manage:users") {
+        return fiber.ErrForbidden
     }
 
     users, err := s.adminRepo.GetAllUsers()
@@ -54,16 +53,14 @@ func (s *AdminService) GetAllUsers(c *fiber.Ctx) error {
 // @Router /users/{id} [get]
 func (s *AdminService) GetUserByID(c *fiber.Ctx) error {
     id := c.Params("id")
-    userID := c.Locals("user_id").(uuid.UUID)
-    role := c.Locals("role_name").(string)
 
     paramID, err := uuid.Parse(id)
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "invalid user id"})
     }
 
-    if role != "admin" && paramID != userID {
-        return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
+    if !middleware.HasPermission(c, "manage:users") {
+        return fiber.ErrForbidden
     }
 
     user, err := s.adminRepo.GetUserByID(paramID)
@@ -86,10 +83,8 @@ func (s *AdminService) GetUserByID(c *fiber.Ctx) error {
 // @Failure 400,403,500 {object} map[string]interface{}
 // @Router /users [post]
 func (s *AdminService) CreateUser(c *fiber.Ctx) error {
-    role := c.Locals("role_name").(string)
-
-    if role != "admin" {
-        return c.Status(403).JSON(fiber.Map{"error": "admin only"})
+    if !middleware.HasPermission(c, "manage:users") {
+        return fiber.ErrForbidden
     }
 
     var req models.User
@@ -125,16 +120,14 @@ func (s *AdminService) CreateUser(c *fiber.Ctx) error {
 // @Router /users/{id} [put]
 func (s *AdminService) UpdateUser(c *fiber.Ctx) error {
     paramID := c.Params("id")
-    userID := c.Locals("user_id").(uuid.UUID)
-    role := c.Locals("role_name").(string)
 
     targetID, err := uuid.Parse(paramID)
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "invalid user id"})
     }
 
-    if role != "admin" && targetID != userID {
-        return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
+    if !middleware.HasPermission(c, "manage:users") {
+        return fiber.ErrForbidden
     }
 
     var req models.User
@@ -167,12 +160,9 @@ func (s *AdminService) DeleteUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid user id"})
 	}
 
-	userID := c.Locals("user_id").(uuid.UUID)
-	role := c.Locals("role_name").(string)
-
-	if role != "admin" && userID != targetID {
-		return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
-	}
+	if !middleware.HasPermission(c, "manage:users") {
+        return fiber.ErrForbidden
+    }
 
 	if err := s.adminRepo.DeleteUser(targetID); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -193,9 +183,8 @@ func (s *AdminService) DeleteUser(c *fiber.Ctx) error {
 // @Failure 400,403,500 {object} map[string]interface{}
 // @Router /users/{id}/role [put]
 func (s *AdminService) AssignRole(c *fiber.Ctx) error {
-    role := c.Locals("role_name").(string)
-    if role != "admin" {
-        return c.Status(403).JSON(fiber.Map{"error": "admin only"})
+    if !middleware.HasPermission(c, "manage:users") {
+        return fiber.ErrForbidden
     }
 
     var req struct {
