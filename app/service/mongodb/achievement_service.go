@@ -13,6 +13,7 @@ import (
     repoPg "student-performance-report/app/repository/postgresql"
     "github.com/gofiber/fiber/v2"
     "github.com/google/uuid"
+    "student-performance-report/middleware"
 )
 
 type AchievementService struct {
@@ -43,19 +44,6 @@ func getUserIDFromToken(c *fiber.Ctx) (uuid.UUID, error) {
     return uuid.Nil, errors.New("server error: user_id format invalid (expected string or uuid)")
 }
 
-func getUserRoleFromToken(c *fiber.Ctx) string {
-    roleRaw := c.Locals("role_name")
-    
-    if roleRaw == nil {
-        return ""
-    }
-
-    if roleStr, ok := roleRaw.(string); ok {
-        return roleStr
-    }
-    return ""
-}
-
 
 // CreateAchievement godoc
 // @Summary Create New Achievement Draft
@@ -70,6 +58,9 @@ func getUserRoleFromToken(c *fiber.Ctx) string {
 // @Router /achievements [post]
 func (s *AchievementService) CreateAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:create") {
+    return fiber.ErrForbidden
+    }
 
     userID, err := getUserIDFromToken(c)
     if err != nil {
@@ -132,11 +123,15 @@ func (s *AchievementService) CreateAchievement(c *fiber.Ctx) error {
 // @Router /achievements [get]
 func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:read") {
+    return fiber.ErrForbidden
+    }
+
     userID, err := getUserIDFromToken(c)
     if err != nil {
         return c.Status(401).JSON(fiber.Map{"error": err.Error()}) 
     }
-    role := getUserRoleFromToken(c)
+   
 
     var query modelPg.PaginationQuery
     if err := c.QueryParser(&query); err != nil {
@@ -152,17 +147,23 @@ func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
 
     filters := make(map[string]interface{})
 
-    if role == "mahasiswa" {
-        studentID, _ := s.pgRepo.GetStudentByUserID(ctx, userID)
+    if studentID, err := s.pgRepo.GetStudentByUserID(ctx, userID); err == nil {
         filters["student_id"] = studentID
         if query.Status != "" {
             filters["status"] = query.Status
         }
-    } 
+    }
     
-    if role == "dosen_wali" {
-        lecturerID, _ := s.lecturer.GetLecturerByUserID(ctx, userID)
-        advisees, _ := s.lecturer.GetAdvisees(lecturerID)
+    lecturerID, err := s.lecturer.GetLecturerByUserID(ctx, userID)
+    if  err == nil { 
+
+        advisees, err := s.lecturer.GetAdvisees(lecturerID)
+        if err != nil {
+        return c.Status(500).JSON(fiber.Map{
+            "error": "failed to fetch advisees",
+        })
+        }
+
         var studentIDs []uuid.UUID
         for _, mhs := range advisees {
             studentIDs = append(studentIDs, mhs.ID)
@@ -176,6 +177,7 @@ func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
                 },
             })
         }
+
         filters["student_ids"] = studentIDs
 
         if query.Status != "" {
@@ -250,6 +252,9 @@ func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
 // @Router /achievements/{id} [get]
 func (s *AchievementService) GetAchievementDetail(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:read") {
+    return fiber.ErrForbidden
+    }
 
     achievementID, err := uuid.Parse(c.Params("id"))
     if err != nil {
@@ -260,28 +265,20 @@ func (s *AchievementService) GetAchievementDetail(c *fiber.Ctx) error {
     if err != nil {
         return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
     }
-    role := getUserRoleFromToken(c)
 
     ref, err := s.pgRepo.GetReferenceByID(ctx, achievementID)
     if err != nil {
         return c.Status(404).JSON(fiber.Map{"error": "Achievement not found"})
     }
 
-    if role == "mahasiswa" {
-
-        currentStudentID, err := s.pgRepo.GetStudentByUserID(ctx, userID)
-        if err != nil {
-             return c.Status(500).JSON(fiber.Map{"error": "Student profile error"})
-        }
-
+    currentStudentID, err := s.pgRepo.GetStudentByUserID(ctx, userID)
+    if err == nil {
         if ref.StudentID != currentStudentID {
             return c.Status(403).JSON(fiber.Map{"error": "Forbidden: You cannot view this achievement"})
         }
-    } else if role == "dosen_wali" {
-        lecturerID, err := s.lecturer.GetLecturerByUserID(ctx, userID)
-        if err != nil {
-            return c.Status(403).JSON(fiber.Map{"error": "Lecturer profile not found"})
-        }
+    } 
+    lecturerID, err := s.lecturer.GetLecturerByUserID(ctx, userID)
+    if err ==nil{
         advisees, err := s.lecturer.GetAdvisees(lecturerID)
         if err != nil {
             return c.Status(500).JSON(fiber.Map{"error": "Failed to check advisee relationship"})
@@ -332,6 +329,10 @@ func (s *AchievementService) GetAchievementDetail(c *fiber.Ctx) error {
 // @Router /achievements/{id}/submit [post]
 func (s *AchievementService) SubmitAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:create") {
+    return fiber.ErrForbidden
+    }
+
     achievementID, err := uuid.Parse(c.Params("id"))
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"}) 
@@ -380,6 +381,10 @@ func (s *AchievementService) SubmitAchievement(c *fiber.Ctx) error {
 // @Router /achievements/{id} [delete]
 func (s *AchievementService) DeleteAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:delete") {
+    return fiber.ErrForbidden
+    }
+
     
     achievementID, err := uuid.Parse(c.Params("id"))
     if err != nil {
@@ -429,6 +434,10 @@ func (s *AchievementService) DeleteAchievement(c *fiber.Ctx) error {
 // @Router /achievements/{id}/verify [post]
 func (s *AchievementService) VerifyAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:verify") {
+    return fiber.ErrForbidden
+    }
+
     achievementID, _ := uuid.Parse(c.Params("id"))
 
     userID, err := getUserIDFromToken(c)
@@ -473,6 +482,10 @@ func (s *AchievementService) VerifyAchievement(c *fiber.Ctx) error {
 // @Router /achievements/{id}/reject [post]
 func (s *AchievementService) RejectAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:verify") {
+    return fiber.ErrForbidden
+    }
+
     achievementID, _ := uuid.Parse(c.Params("id"))
 
     userID, err := getUserIDFromToken(c)
@@ -512,6 +525,10 @@ func (s *AchievementService) RejectAchievement(c *fiber.Ctx) error {
 // @Router /achievements/{id} [put]
 func (s *AchievementService) UpdateAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:update") {
+    return fiber.ErrForbidden
+    }
+
     achievementID, err := uuid.Parse(c.Params("id"))
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"}) 
@@ -565,6 +582,10 @@ func (s *AchievementService) UpdateAchievement(c *fiber.Ctx) error {
 // @Router /achievements/{id}/history [get]
 func (s *AchievementService) GetAchievementHistory(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:read") {
+    return fiber.ErrForbidden
+    }
+
     achievementID, err := uuid.Parse(c.Params("id"))
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"}) 
@@ -627,6 +648,10 @@ func (s *AchievementService) GetAchievementHistory(c *fiber.Ctx) error {
 // @Router /achievements/{id}/attachments [post]
 func (s *AchievementService) UploadAttachments(c *fiber.Ctx) error {
     ctx := c.Context()
+    if !middleware.HasPermission(c, "achievement:create") {
+    return fiber.ErrForbidden
+    }
+
     achievementID, err := uuid.Parse(c.Params("id"))
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"}) 

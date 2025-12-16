@@ -36,12 +36,8 @@ func SetupPostgresRoutes(app *fiber.App, db *sql.DB) {
     auth := api.Group("/auth")
     auth.Post("/login", authService.Login)
     auth.Post("/refresh", authService.Refresh)
-    auth.Post("/logout",
-        middleware.AuthRequired(),
-        authService.Logout)
-    auth.Get("/profile",
-        middleware.AuthRequired(),  
-        authService.Profile)
+    auth.Post("/logout", middleware.AuthRequired(), authService.Logout)
+    auth.Get("/profile", middleware.AuthRequired(), authService.Profile)
 
     // 5.2 Users 
     users := api.Group("/users", middleware.AuthRequired())
